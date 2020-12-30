@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Download file</title>
+    <script type="text/javascript">
+      var qs = (function(a) {
+                  if (a == "") return {};
+                  var b = {};
+                  for (var i = 0; i < a.length; ++i)
+                  {
+                    var p=a[i].split('=', 2);
+                    if (p.length == 1)
+                    b[i] = "";
+                    else
+                    b[i] = decodeURIComponent(p[1].replace(/\+/g, " "));
+                  }
+                  return b;
+            })(window.location.search.substr(1).split('&'));
+        
+		
+		var xmlhttp = new XMLHttpRequest();
+		var url = atob(qs[0]);
+		
+		function downloadFile(data, filename)
+		{
+			var blob = new Blob([data], {type: 'application/ms-download;charset=utf-8'});
+			if (typeof window.navigator.msSaveBlob !== 'undefined') 
+			{
+				window.navigator.msSaveBlob(blob, filename);
+				return;
+			}
+
+			var blobURL = window.URL.createObjectURL(blob);
+			var tempLink = document.createElement('a');
+			tempLink.style.display = 'none';
+			tempLink.href = blobURL;
+			tempLink.setAttribute('download', filename);
+
+			if (typeof tempLink.download === 'undefined')
+				tempLink.setAttribute('target', '_blank');
+			
+			document.body.appendChild(tempLink);
+			tempLink.click();
+			document.body.removeChild(tempLink);
+			setTimeout(function () {
+				window.URL.revokeObjectURL(blobURL);
+				setTimeout(function () {
+				   window.close();
+				}, 100);
+			}, 100);
+		}
+			
+
+		xmlhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				var responseData = null; try { responseData = JSON.parse(this.responseText); } catch (e) { responseData = this.response; };
+				
+				var base64str = responseData.data;
+				var binary = atob(base64str);
+				var len = binary.length;
+				var buffer = new ArrayBuffer(len); 
+				var view = new Uint8Array(buffer);
+				for (var i = 0; i < len; i++) {
+					view[i] = binary.charCodeAt(i);
+				}
+				
+				downloadFile(view, responseData.name);
+			}
+		};
+		xmlhttp.open("GET", url, true);
+		xmlhttp.send();
+
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
